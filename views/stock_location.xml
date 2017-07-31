@@ -1,0 +1,86 @@
+<odoo>
+ 	<record id="stock_series_tree" model="ir.ui.view">
+        <field name="name">Series View</field>
+        <field name="model">location.series.name</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <tree string="Case" create="false" edit='false'>
+                <field name="id" />
+                <field name="name" />
+                <field name="str_id" />
+                <field name="value" />
+            </tree>
+        </field>
+    </record>
+    
+    <record model="ir.actions.act_window" id="stock_series_tree_action">
+        <field name="name">Series action</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">location.series.name</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree</field>
+	<field name="view_id" ref="stock_series_tree"/>
+    </record>
+    <menuitem action="stock_series_tree_action" name="Series" id="menu_stock_series" parent="stock.menu_warehouse_config" sequence="3" />
+    
+    <record id="stock_location_form_view_inherit" model="ir.ui.view">
+		<field name="name">Stock Location View</field>
+		<field name="model">stock.location</field>
+		<field name="inherit_id" ref="stock.view_location_form"></field>
+		<field name="arch" type="xml">
+			<group position="inside">
+				<group col="2" attrs="{'invisible':[('actual_location','!=',True)]}">
+		      			<field name="row" />
+		      			<field name="shelf"/>
+		      			<field name="case"/>
+		      			<label for="storage_capacity"/>
+		      			<div>
+		      				<field name="storage_capacity" attrs="{'readonly':[('readonly_bool','in',('row','rs','rsc'))]}" class="oe_inline"/>
+		      				<field name="uom_id" attrs="{'readonly':[('readonly_bool','in',('row','rs','rsc'))]}" class="oe_inline"/>
+		      			</div>
+	      			</group>
+	      			<group col="2" attrs="{'invisible':[('actual_location','!=',True)]}">
+      				<label for="row_name"/>
+				   <div>
+				   	<field name="row_name" attrs="{'required': [('row','>',0)],'readonly':[('readonly_bool','in',('row','rs','rsc'))]}" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/>
+				       <button type="object" help="Change Row Series" name="change_series" class="oe_inline"  nolabel="1"  icon="gtk-go-forward" context="{'row':True}" attrs="{'invisible':['|',('readonly_bool','not in',('row','rs','rsc')),('row_name','=',False)]}"/>
+				   </div>
+					   
+		   		<label for="shelf_name"/>
+				   <div>
+				   	<field name="shelf_name" attrs="{'required': [('shelf','>',0)],'readonly':[('readonly_bool','in',('rs','rsc'))]}" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/>
+				       <button type="object" help="Change Shelf Series" name="change_series" class="oe_inline"  nolabel="1"  icon="gtk-go-forward" context="{'shelf':True}" attrs="{'invisible':['|',('readonly_bool','not in',('row','rs','rsc')),('row_name','=',False)]}"/>
+				   </div>
+					   
+			   	<label for="case_name"/>
+				   <div>
+				   	<field name="case_name" attrs="{'required': [('case','>',0)],'readonly':[('readonly_bool','in',('rsc'))]}" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/>
+				       <button type="object" help="Change Case Series" name="change_series" class="oe_inline"  nolabel="1"  icon="gtk-go-forward" context="{'case':True}" attrs="{'invisible':['|',('readonly_bool','not in',('row','rs','rsc')),('row_name','=',False)]}"/>
+				   </div>
+		      		</group>
+		      		<field name="readonly_bool" invisible="1"/>
+		      		<button type="object" string="Calculate Structure" name="calculate_structure" class="btn-primary" attrs="{'invisible':[('actual_location','!=',True)]}"/>
+		   	</group>
+		   	<field name="comment"  position="before">
+                                <field name="storage_locations" readonly="1" nolabel="1" attrs="{'invisible':[('actual_location','!=',True)]}" />
+                                <field name="actual_location" invisible="1"/>
+                       </field>
+                       
+		</field>
+    </record>
+    
+    <record id="change_series_form" model="ir.ui.view">
+        <field name="name">Change Series</field>
+        <field name="model">change.series</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <form string="Change Series">
+               <group>
+                <field name="previous_series" readonly="1"/>
+                <field name="new_series" options="{'no_open':True,'no_create':True}" domain="[('id','!=',previous_series)]"/>
+                <button name="save" string="save" class="btn-primary"/>
+              </group>
+            </form>
+        </field>
+    </record>
+</odoo>

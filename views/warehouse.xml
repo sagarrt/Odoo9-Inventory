@@ -1,0 +1,239 @@
+<odoo>
+    <record id="product_stock_location_from" model="ir.ui.view">
+		<field name="name">Stock Location From View</field>
+		<field name="model">n.warehouse.placed.product</field>
+		<field name="type">form</field>
+		<field name="arch" type="xml">
+		    <form string="Product Stock Location" edit='false' create="false" delete='false'>
+		    	<header>
+		    		<button type="object" name="stock_operation" attrs="{'invisible':[('state','!=','empty')]}" string="Add Quantity" class="btn-primary" context="{'add_stock':True}"/>
+		    		<button type="object" name="stock_operation" attrs="{'invisible':[('state','!=','partial')]}" string="Update Quantity" class="btn-primary" context="{'update_stock':True}"/>
+		    		<button type="object" name="stock_operation"  attrs="{'invisible':[('state','=','empty')]}" string="Release Quantity" class="btn-primary" context="{'release_stock':True}"/>
+		    		<button type="object" name="stock_operation"  attrs="{'invisible':[('state','=','empty')]}" string="Transfer Quantity" class="btn-primary" context="{'transfer_stock':True}"/>
+		    		<field name="state" widget="statusbar"/>
+		    	</header>
+		    	<sheet>
+		    		<field name="label_status" invisible="1"/>
+		    		<div class="oe_button_box" name="button_box" >
+				    <button class="oe_stat_button" type="object" name="open_stock_history" icon="fa-bookmark-o" string="History"/>
+				</div>
+		    		<group col="4" attrs="{'readonly':[('state','!=','empty')]}">
+		    			<label for="n_warehouse"/>
+					<div>
+						<field name="n_warehouse"  nolabel="1" options="{'no_open':True,'no_create':True}" />
+						<h2><label string="No Space Available in This Warehouse" style="color:red;" attrs="{'invisible': [('label_status', '!=','warehouse')]}"/></h2>
+					</div>
+					<label for="n_row"/>
+					<div>
+						<field name="n_row" nolabel="1" attrs="{'readonly':[('n_location','=',False)]}" />
+						<h2><label string="No Space Available in This Row" style="color:red;" attrs="{'invisible': [('label_status', '!=','row')]}"/></h2>
+					</div>
+					
+					<label for="n_location"/>
+					<div>
+						<field name="n_location" nolabel="1" options="{'no_open':True,'no_create':True}" attrs="{'readonly':[('n_warehouse','=',False)]}" domain="[('usage','=','internal'),('scrap_location','=',False),('n_quality_ck','=',False)]"/>
+						<h2><label string="No Space Available in This Location" style="color:red;" attrs="{'invisible': [('label_status', '!=','location')]}"/></h2>
+					</div>
+					<label for="n_shelf"/>
+					<div>
+						<field name="n_shelf" nolabel="1" attrs="{'readonly':[('n_row','=',False)]}"/>
+						<h2><label string="No Space Available in This Shelf" style="color:red;" attrs="{'invisible': [('label_status', '!=','shelf')]}"/></h2>
+					</div>
+					
+					<label for="n_max_qty"/>
+					<div>
+						<field name="n_max_qty" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/> Pallets 
+				       		<button type="object" help="Change Storage Capicity" name="change_storage_capicity" class="oe_inline"  nolabel="1"  icon="gtk-go-forward"/>
+					</div>
+					<label for="n_case"/>
+					<div>
+						<field name="n_case" nolabel="1" attrs="{'readonly':[('n_shelf','=',False)]}"/>
+						<h2><label string="No Space Available in This Case" style="color:red;" attrs="{'invisible': [('label_status', '!=','case')]}"/></h2>
+					</div>
+				</group>
+		    		<group col="4" readonly="1">
+					<field name="product_id"  options="{'no_open':True,'no_create':True}" />
+					<field name="n_qty" />
+				</group>
+			</sheet>
+			<div class="oe_chatter">
+		            <field name="message_ids" widget="mail_thread"/>
+		        </div>
+		    </form>
+		</field>
+    	</record>
+    	
+	<record id="product_stock_location_tree" model="ir.ui.view">
+		<field name="name">Stock Location Tree View</field>
+		<field name="model">n.warehouse.placed.product</field>
+		<field name="type">tree</field>
+		<field name="arch" type="xml">
+		    <tree string="Product Stock Location" create="false" delete='false'>
+		    	<field name="product_id" />
+			<field name="n_warehouse" />
+			<field name="n_location" />
+			<field name="n_row" />
+			<field name="n_shelf" />
+			<field name="n_case" />
+			<field name="n_qty" />
+		    </tree>
+		</field>
+    	</record>
+    	
+	<record model="ir.actions.act_window" id="product_stock_location_action">
+		<field name="name">Stock Location</field>
+		<field name="type">ir.actions.act_window</field>
+		<field name="res_model">n.warehouse.placed.product</field>
+		<field name="view_type">form</field>
+		<field name="view_mode">tree,form</field>
+		<field name="domain">[ ("state", "in",('full','partial')) ]</field>
+		<field name="view_id" ref="product_stock_location_tree"/>
+	</record>
+    
+   	<menuitem id="menu_stock_location_detail" name="Product Stock Location" 
+            parent="stock.menu_stock_inventory_control" sequence="3"/>
+            
+        <menuitem id="menu_product_location_detail" name="Product On Locations" action="product_stock_location_action"
+            parent="menu_stock_location_detail" sequence="1"/>
+            
+        <record id="product_stock_free_location_tree" model="ir.ui.view">
+		<field name="name">Stock Location Tree View</field>
+		<field name="model">n.warehouse.placed.product</field>
+		<field name="type">tree</field>
+		<field name="arch" type="xml">
+		    <tree string="Available Stock Location" create="false" delete='false'>
+			<field name="n_warehouse" />
+			<field name="n_location" />
+			<field name="n_row" />
+			<field name="n_shelf" />
+			<field name="n_case" />
+			<field name="n_free_qty" />
+		    </tree>
+		</field>
+    	</record>
+    	
+        <record model="ir.actions.act_window" id="product_stock_free_location_action">
+		<field name="name">Stock Location</field>
+		<field name="type">ir.actions.act_window</field>
+		<field name="res_model">n.warehouse.placed.product</field>
+		<field name="view_type">form</field>
+		<field name="view_mode">tree,form</field>
+		<field name="domain">[ ("state", "in",('empty','partial')) ]</field>
+		<field name="view_id" ref="product_stock_free_location_tree"/>
+	</record>
+	
+    	<menuitem id="menu_free_stock_location_detail" name="Free Location" action="product_stock_free_location_action"
+            parent="menu_stock_location_detail" sequence="2"/>
+    
+    	<menuitem id="menu_transfer_stock_location_detail" name="Transfer on Location"
+            parent="menu_stock_location_detail" sequence="3"/>
+            
+    <!--History of stock location-->
+    <record id="stock_location_history_action_tree" model="ir.ui.view">
+        <field name="name">Location history Tree View</field>
+        <field name="model">location.history</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <tree string="Row" edit='false' create='false' editable="top">
+                <field name="product_id" />
+                <field name="create_date" string="Created By"/>
+                <field name="qty" />
+		<field name="operation_name" />
+            </tree>
+        </field>
+    </record>
+   
+  <!--Add stock in location-->
+    <record id="add_stock_location_operation_form" model="ir.ui.view">
+        <field name="name">Add Stock View</field>
+        <field name="model">location.stock.operation</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <form string="Add Stock">
+               <group>
+                <field name="product_id"  options="{'no_open':True,'no_create':True}"/>
+                <field name="stock_location" readonly="1"/>
+                <field name="qty" string="Available Qty"/>
+                <field name="storage" string="Available Storage Capicty" readonly="1"/>
+                <field name="add_qty" string="Quantity"/>
+                
+                <button name="save" string="Save" type="object" class="btn-primary"/>
+              </group>
+            </form>
+        </field>
+    </record>
+    
+    <!--Updae stock in location-->
+    <record id="update_stock_location_operation_form" model="ir.ui.view">
+        <field name="name">Update Stock View</field>
+        <field name="model">location.stock.operation</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <form string="Add Stock">
+               <group>
+                <field name="product_id" readonly="1"/>
+                <field name="stock_location" readonly="1"/>
+                <field name="qty" string="Available Qty" readonly="1"/>
+                <field name="storage" string="Available Storage Capicty" readonly="1"/>
+                <field name="add_qty" string="Quantity"/>
+                
+                <button name="save" string="Save" type="object" class="btn-primary"/>
+              </group>
+            </form>
+        </field>
+    </record>
+  <!--remove stock from location-->
+    <record id="remove_stock_location_operation_form" model="ir.ui.view">
+        <field name="name">Remove Stock View</field>
+        <field name="model">location.stock.operation</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <form string="Remove">
+               <group>
+                <field name="product_id" readonly="1"/>
+                <field name="stock_location" readonly="1"/>
+                <field name="qty" string="Available Qty" readonly="1"/>
+                <field name="add_qty" string="Quantity"/>
+               </group>
+               <button name="save" string="Save" type="object" class="btn-primary"/>
+            </form>
+        </field>
+    </record>
+    
+    <!--Transfer stock location-->
+    <record id="transfer_stock_location_operation_form" model="ir.ui.view">
+        <field name="name">Transfer Stock View</field>
+        <field name="model">location.stock.operation</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <form string="Transfer">
+              <group>
+                <field name="product_id" readonly="1"/>
+                <field name="stock_location" readonly="1"/>
+                <field name="new_stock_location" options="{'no_open':True,'no_create':True}" string="New Location" domain="['|',('product_id','=','product_id'),('state','=','empty'),('n_location','=',stock_location)]"/>
+                <field name="qty" string="Available Qty" readonly="1"/>
+                <field name="storage" string="Available Storage Capicity" readonly="1"/>
+                <field name="add_qty" string="Quantity"/>
+              </group>
+              <button name="save" string="Save" type="object" class="btn-primary"/>
+            </form>
+        </field>
+    </record>
+    
+    <!--Update Storage Capicity-->
+    <record id="update_storage_capicity_operation_form" model="ir.ui.view">
+        <field name="name">Transfer Stock View</field>
+        <field name="model">location.stock.operation</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <form string="Update Storage Capicity">
+              <group>
+                <field name="stock_location" readonly="1"/>
+                <field name="previous_storage_capicity" readonly="1"/>
+                <field name="new_storage_capicity" />
+              </group>
+              <button name="update_capicity" string="Save" type="object" class="btn-primary"/>
+            </form>
+        </field>
+    </record>    
+</odoo>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="0">
+ 	<record id="series_1" model="location.series.name">
+            <field name="name">Alphabet(Small)</field>
+            <field name="str_id">ASL</field>
+            <field name="value">a..z</field>
+        </record>
+        <record id="series_2" model="location.series.name">
+            <field name="name">Alphabet(Capital)</field>
+            <field name="str_id">ACL</field>
+            <field name="value">A..Z</field>
+        </record>
+        <record id="series_3" model="location.series.name">
+            <field name="name">Numeric</field>
+            <field name="str_id">NUM</field>
+            <field name="value">1..9..</field>
+        </record>
+        <record id="series_4" model="location.series.name">
+            <field name="name">Roman</field>
+            <field name="str_id">ROM</field>
+            <field name="value">I..V..X</field>
+        </record>
+    </data>
+</openerp>

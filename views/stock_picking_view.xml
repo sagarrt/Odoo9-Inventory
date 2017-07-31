@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+    
+        <record id="stock_picking_form_view_inherit" model="ir.ui.view" >
+            <field name="name">stock.picking.form</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form"/>
+            <field name="arch" type="xml">
+             
+             <field name="origin" position="after">
+		<field name="packaging" readonly="1" attrs="{'invisible' : [ ('packaging','=',False)]}"/>
+		<label for="packaging_count"/>
+		<div>
+			<field name="packaging_count" attrs="{'invisible':[('packaging_count','=',False)]}" readonly="1"/>
+			<field name="packaging_unit" readonly="1" attrs="{'invisible':[('packaging_unit','=',False)]}"/>
+		</div>
+             </field>
+             <xpath expr="//notebook" position="after">
+                  <group>
+                  	<label for="packaging_count"/>
+			<div>
+               			<field name="pallet_size" attrs="{'readonly':[('state','in',('done','delivered','cancel'))],'invisible':[('pallet_size', '=', False)]}" groups="stock.group_stock_user"/>
+               			<field name="pallet_qty_unit" readonly="1" attrs="{'invisible':[('pallet_qty_unit','=',False)]}"/>
+       			</div>
+               		<field name="pallet_type" attrs="{'readonly':[('state','in',('done','delivered','cancel'))]}" domain="[('raw_material_type.string','=','pallet')]" options="{'no_create': True, 'no_open': True}" groups="stock.group_stock_user"/>
+		        <field name="total_no_pallets" attrs="{'invisible':[('total_no_pallets', '=',False)]}" groups="stock.group_stock_user" readonly='1'/>
+          	  </group>
+             </xpath>
+             </field>
+         </record>
+    </data>
+</openerp>

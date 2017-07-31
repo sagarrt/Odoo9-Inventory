@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="0">
+
+	<record id="new_sk_location" model="stock.location">
+            <field name="name">Pre Stock</field>
+            <field name="active">True</field>
+	    <!--field name="n_sk_ck">True</field-->
+        </record>
+
+	<!--record id="new_picking_stock" model="stock.picking.type">
+            <field name="name">Stock In Location</field>
+	    <field name="code">internal</field>
+	    <field name="sequence_id" ref="stock.seq_picking_internal" />
+            <field name="show_entire_packs">True</field>
+	    <field name="use_existing_lots">True</field>
+	    <field name="pre_ck">True</field>
+	    <field name="default_location_src_id" ref="new_sk_location" />
+        </record-->
+
+	</data>
+	<data noupdate="1">
+<!-- PUSH rule -->	
+	<!--record id="new_mrp_push_rule" model="stock.location.path">
+            <field name="name">Manufacture Push Rule</field>
+	    <field name="active">True</field>
+	    <field name="location_from_id" ref="new_sk_location" />
+	    <field name="location_dest_id" ref="new_sk_location" />
+            <field name="picking_type_id" ref="new_picking_stock" />
+	    <field name="route_id" ref="mrp.route_warehouse0_manufacture" />
+        </record>
+	<record id="new_purchase_push_rule1" model="stock.location.path">
+            <field name="name">Purchase Push Rule</field>
+	    <field name="active">True</field>
+	    <field name="location_from_id" ref="new_sk_location" />
+	    <field name="location_dest_id" ref="new_sk_location" />
+            <field name="picking_type_id" ref="new_picking_stock" />
+	    <field name="route_id" ref="purchase.route_warehouse0_buy" />
+        </record-->
+<!--end -->
+    </data>
+</openerp>

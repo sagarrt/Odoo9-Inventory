@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+        <record id="store_locations_form_view_wizard" model="ir.ui.view">
+            <field name="name">Location Form </field>
+            <field name="model">stock.store.location.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Select Store Locations">
+                    <field name="picking" invisible="1"/>
+                    <group>
+                    	<label string="NO location are founded Please create location for warehouse" attrs="{'invisible':[('locations','=',[])]}"/>
+                        <field name="locations" nolabel="1">
+                        	<tree create='false' delete='false' editable="top">
+                        		<field name="select_store" />
+                        		<field name="locations" readonly="1"/>
+                        		<field name="n_max_qty" readonly="1"/>
+                        		<field name="n_free_qty" readonly="1"/>
+                        	</tree>
+                	</field>
+                    </group>
+                    <button class="btn-primary" type="object" name="process" string="Process"/>
+                </form>
+            </field>
+        </record>
+    </data>
+</openerp>
