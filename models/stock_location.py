@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+## -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from openerp import api, fields, models, _
@@ -34,6 +34,7 @@ class stockLocation(models.Model):
 		for rec in self:
 			flag='rsc'
 			view =''
+			warehouse=self.env['stock.warehouse'].search([('lot_stock_id','=',rec.id)],limit=1)
 			for row in range(rec.row):
 				view +='<table style="width:100%" border="1">'
 				n_row=0
@@ -71,6 +72,7 @@ class stockLocation(models.Model):
 							n_case=self.int_to_roman(case+1)
 						view +=str(n_row)+str(n_shelf)+str(n_case)
 						search_id=self.env['n.warehouse.placed.product'].search([
+								('n_warehouse','=',warehouse.id),
 								('n_location','=',rec.id),
 								('n_row','=',str(n_row)),
 								('n_shelf','=',str(n_shelf)),
@@ -79,7 +81,7 @@ class stockLocation(models.Model):
 								
 						if not search_id:
 							self.env['n.warehouse.placed.product'].create({
-								'n_warehouse':False,
+								'n_warehouse':warehouse.id,
 								'n_location':str(rec.id),
 								'n_row':str(n_row),
 								'n_shelf':str(n_shelf),
@@ -91,7 +93,6 @@ class stockLocation(models.Model):
 					view +='</tr>'
 				view +='</table> <p><p>'
 			rec.storage_locations=view
-			print "---",view
 			rec.readonly_bool=flag
 		
 	def int_to_roman(self,input):
@@ -108,13 +109,14 @@ class stockLocation(models.Model):
 	def change_series(self):
 		context = self._context.copy()
 		order_form = self.env.ref('api_inventory.change_series_form', False)
+		name=''
 		if self._context.get('row'):
     			name='Change Row Series'
     			context.update({'default_previous_series':self.row_name.id})
     		if self._context.get('shelf'):
     			name='Change Shelf Series'
     			context.update({'default_previous_series':self.shelf_name.id})
-		if self._context.get('row'):
+		if self._context.get('case'):
     			name='Change Case Series'
     			context.update({'default_previous_series':self.case_name.id})	
     		if name and order_form:	
@@ -143,3 +145,4 @@ class changeSeries(models.TransientModel):
 	previous_series = fields.Many2one("location.series.name","Pervious Series")
 	new_series = fields.Many2one("location.series.name","New Series")
 	
+
