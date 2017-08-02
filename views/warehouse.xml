@@ -53,8 +53,35 @@
 				</group>
 		    		<group col="4" readonly="1">
 					<field name="product_id"  options="{'no_open':True,'no_create':True}" />
-					<field name="n_qty" />
+					<label for="total_quantity"/>
+					<div>
+						<field name="total_quantity" class="oe_inline"/>
+						<field name="qty_unit" class="oe_inline"/>
+					</div>
+					<field name="Packaging_type" />
+					<label for="packages"/>
+					<div>
+						<field name="packages" class="oe_inline"/>
+						<field name="pkg_unit" class="oe_inline"/>
+					</div>
 				</group>
+				<notebook>
+					<page string="Lot Numbers">
+						<field name="lot_numbers" readonly="1">
+						    <tree>
+							<field name="name" />
+							<field name="product_id" />
+						    </tree>
+						</field>
+					</page>
+					<page string="Extra Information">
+					   <group col="4">
+						<field name="n_mo_number" />
+						<field name="n_do_number" />
+						<field name="n_po_number" />
+					   </group>
+					</page>
+				</notebook>
 			</sheet>
 			<div class="oe_chatter">
 		            <field name="message_ids" widget="mail_thread"/>
