@@ -1,4 +1,26 @@
 <odoo>
+            <record id="product_template_form_view_aalmir_name" model="ir.ui.view">
+            <field name="name">product.template.common.form.aalmir.name</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view" />
+            <field name="arch" type="xml">
+                 <group name="packaging" position='replace'>
+	           <group name="packaging" string="Packaging" colspan="4" attrs="{'invisible':[('type', 'not in', ['product', 'consu'])]}"  groups="product.group_stock_packaging">
+	                <field name="packaging_ids" nolabel="1">
+	                   <tree editable='bottom'>
+                                      <field name="name" string="Name" invisible="1"/>
+				      <field name="pkgtype" required="1"/>
+				      <field name="qty" string="Quantity" required="1"/>
+				      <field name="uom_id" required="1" options="{'no_create': True, 'no_open': True}"/>
+				      <field name="packg_uom" required="1" options="{'no_create': True, 'no_open': True}"/>
+	                   </tree>
+                	</field>
+	            </group>
+                 </group>
+            </field>
+        </record>
+        
+
     <record id="product_template_form_view_inherite" model="ir.ui.view">
             <field name="name">Product Template Inherite inventory</field>
             <field name="model">product.template</field>

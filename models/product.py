@@ -109,3 +109,51 @@ class productProduct(models.Model):
 			domain + ['&', ('location_id', operator, location_ids), '!', ('location_dest_id', operator, location_ids)]
 		    )
 
+
+class productPackging(models.Model):
+    _inherit = 'product.packaging'
+
+    pkgtype = fields.Selection([('primary','Primary'),('secondary','Secondary')],'Types')
+    uom_id = fields.Many2one('product.uom','Unit')
+    packg_uom = fields.Many2one('product.uom','Packaging Unit')
+
+    @api.multi
+    @api.onchange('uom_id','qty','unit_id')
+    def get_name(self):
+	for line in self:
+		uom_name=qty=category=''
+		if line.uom_id:
+			uom_name=line.uom_id.name
+		if line.qty:
+			qty=int(line.qty)
+		if line.packg_uom:
+			category=line.packg_uom.name
+		line.name = str(str(qty)+str(uom_name)+"/"+str(category))
+
+
+    @api.model
+    def name_search(self,name, args=None, operator='ilike',limit=100):
+	if self._context.get('primary'):
+		args=[]
+		if self._context.get('product_id'):
+			product_id=self.env['product.product'].search([('id','=',self._context.get('product_id'))])
+			pkg = self.search([('product_tmpl_id','=',product_id.product_tmpl_id.id),('pkgtype','=','primary')])
+			return [(rec.id,rec.name) for rec in pkg]
+			
+		return []
+	elif self._context.get('secondary'):
+		args=[]
+		if self._context.get('product_id'):
+			product_id=self.env['product.product'].search([('id','=',self._context.get('product_id'))])
+			if self._context.get('primary_packaging'):
+				primary=self.search([('id','=',self._context.get('primary_packaging'))])
+				if primary:
+					pkg = self.search([('product_tmpl_id','=',product_id.product_tmpl_id.id),('pkgtype','=','secondary'),('uom_id','=',primary.packg_uom.id)])
+					return [(rec.id,rec.name) for rec in pkg]
+						
+			pkg = self.search([('product_tmpl_id','=',product_id.product_tmpl_id.id),('pkgtype','=','secondary')])
+			return [(rec.id,rec.name) for rec in pkg]
+			
+		return []
+    	return super(ProductUom,self).name_search(name, args, operator=operator,limit=limit)
+

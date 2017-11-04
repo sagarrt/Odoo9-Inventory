@@ -18,28 +18,34 @@
 #
 ##############################################################################
 {
-    'name': 'API Inventory Location Management', 
+    'name': 'Inventory Location Management', 
     'version': '1.0',
     'category': 'inventory',
     'sequence': 1015,
     'summary': 'Stock Location management',
-    'description': ''' Manage Inventory location product qty .
-                      <li> add product in Row, Shelf and case</li>
-                      <li> Do proper Setting Before using this module</li>
-                      <li> Make At least 2 Step route for manufcturing,Bye,and Received Prodcuts</li>
-                      <li> This all are should be internal transfer routes</li>''',
+    'description': ''' Manage Inventory location product qty \n .
+                      add product in Row(X), Shelf(Y) and case(Z) \n
+                      Do proper Setting Before using this module \n
+                      Make At least 2 Step in Warehouse reception steps,it will add push rule in manufacturing and warehouse receipt routes \n
+                      This all are should be internal transfer routes \n
+                      Add Primary and Secondary Packaging in Product for add product qty in store\n
+                      Primary and secondary packaging are related to each other \n
+                      Ex-: Primary (30 Pcs/Carton) then secondary shoud be (20 carton/Pallet)
+                      like second unit of primary should be in secondary first unit''',
     #'author': '',
    # 'website': 'http://abc.com',
-    'depends': ['stock','product'],
+    'depends': ['base','web','stock','product','purchase','mrp'],
     'data': [
-                'security/ir.model.access.csv',
+                #'security/ir.model.access.csv',
                 'data/series_data.xml',
                 "data/stock_data.xml",
                 'views/warehouse.xml',
                 'views/product_location.xml',
                 'views/stock_location.xml',
                 'views/stock_picking_view.xml',
-                'wizard/location_wizard.xml'],
+                'wizard/location_wizard.xml',
+                'wizard/store_operation_view.xml',
+                ],
     'demo': [],
     'test': [],
     'qweb': [],

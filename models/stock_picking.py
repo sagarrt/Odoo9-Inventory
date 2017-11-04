@@ -48,4 +48,14 @@ class stockPickig(models.Model):
 	pallet_qty_unit = fields.Many2one('product.uom',string="No of Packages")
 	pallet_type = fields.Many2one('product.product',"Pallet Type")
      	total_no_pallets=fields.Float('Total Pallets',compute='_get_pallet_count')
-     	
+
+	ntransfer_type=fields.Selection([('receipt','Receipt'),('dispatch','Dispatch'),('develiry','Delivery'),
+     				    ('quality','Quality Check'), ('pre_stock','Move To Stock')],
+     				      string="Type of Picking")
+
+     	@api.model
+     	def create(self,vals):
+     		res =super(stockPickig,self).create(vals)
+     		if res.location_id.pre_ck:
+     			res.ntransfer_type='pre_stock'
+     		return res     	

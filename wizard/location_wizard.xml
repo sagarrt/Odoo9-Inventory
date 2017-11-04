@@ -13,8 +13,8 @@
                         	<tree create='false' delete='false' editable="top">
                         		<field name="select_store" />
                         		<field name="locations" readonly="1"/>
-                        		<field name="n_max_qty" readonly="1"/>
-                        		<field name="n_free_qty" readonly="1"/>
+                        		<field name="max_qty" readonly="1"/>
+                        		<!--field name="n_free_qty" readonly="1"/-->
                         	</tree>
                 	</field>
                     </group>

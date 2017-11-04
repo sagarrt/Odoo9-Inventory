@@ -28,42 +28,41 @@
 		<field name="model">stock.location</field>
 		<field name="inherit_id" ref="stock.view_location_form"></field>
 		<field name="arch" type="xml">
-			<group position="inside">
-				<group col="2" attrs="{'invisible':[('actual_location','!=',True)]}">
-		      			<field name="row" />
-		      			<field name="shelf"/>
-		      			<field name="case"/>
-		      			<label for="storage_capacity"/>
-		      			<div>
-		      				<field name="storage_capacity" attrs="{'readonly':[('readonly_bool','in',('row','rs','rsc'))]}" class="oe_inline"/>
-		      				<field name="uom_id" attrs="{'readonly':[('readonly_bool','in',('row','rs','rsc'))]}" class="oe_inline"/>
-		      			</div>
-	      			</group>
-	      			<group col="2" attrs="{'invisible':[('actual_location','!=',True)]}">
-      				<label for="row_name"/>
-				   <div>
-				   	<field name="row_name" attrs="{'required': [('row','>',0)],'readonly':[('readonly_bool','in',('row','rs','rsc'))]}" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/>
-				       <button type="object" help="Change Row Series" name="change_series" class="oe_inline"  nolabel="1"  icon="gtk-go-forward" context="{'row':True}" attrs="{'invisible':['|',('readonly_bool','not in',('row','rs','rsc')),('row_name','=',False)]}"/>
-				   </div>
-					   
-		   		<label for="shelf_name"/>
-				   <div>
-				   	<field name="shelf_name" attrs="{'required': [('shelf','>',0)],'readonly':[('readonly_bool','in',('rs','rsc'))]}" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/>
-				       <button type="object" help="Change Shelf Series" name="change_series" class="oe_inline"  nolabel="1"  icon="gtk-go-forward" context="{'shelf':True}" attrs="{'invisible':['|',('readonly_bool','not in',('row','rs','rsc')),('row_name','=',False)]}"/>
-				   </div>
-					   
-			   	<label for="case_name"/>
-				   <div>
-				   	<field name="case_name" attrs="{'required': [('case','>',0)],'readonly':[('readonly_bool','in',('rsc'))]}" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/>
-				       <button type="object" help="Change Case Series" name="change_series" class="oe_inline"  nolabel="1"  icon="gtk-go-forward" context="{'case':True}" attrs="{'invisible':['|',('readonly_bool','not in',('row','rs','rsc')),('row_name','=',False)]}"/>
-				   </div>
-		      		</group>
-		      		<field name="readonly_bool" invisible="1"/>
-		      		<button type="object" string="Calculate Structure" name="calculate_structure" class="btn-primary" attrs="{'invisible':[('actual_location','!=',True)]}"/>
-		   	</group>
+			<field name="active" position="before">
+				<field name="actual_location" groups="stock.group_stock_manager"/>
+			</field>
 		   	<field name="comment"  position="before">
+		   		<field name="location_view" attrs="{'invisible':[('actual_location','!=',True)]}" >
+	      				<tree >
+		      				<field name="name" />
+		      				<field name="row" />
+		      				<field name="column"/>
+		      				<field name="depth"/>
+		      			</tree>
+		      			<form name="storage_location">
+		      				<field name="name" />
+						<group col="4">
+				      			<field name="row" />
+					   		<field name="row_name" attrs="{'required': [('row','>',0)],'readonly':[('readonly_bool','in',('row','rc','rcd'))]}"  options="{'no_open':True,'no_create':True}"/>
+						   	
+				      			<field name="column"/>
+				      			<field name="column_name" attrs="{'required': [('column','>',0)],'readonly':[('readonly_bool','in',('rc','rcd'))]}" options="{'no_open':True,'no_create':True}" />
+						   	
+				      			<field name="depth"/>
+				      			<field name="depth_name" attrs="{'required': [('depth','>',0)],'readonly':[('readonly_bool','in',('rcd'))]}" options="{'no_open':True,'no_create':True}" />
+				      			
+				      			<label for="storage_capacity"/>
+				      			<div>
+				      				<field name="storage_capacity" attrs="{'readonly':[('readonly_bool','in',('row','rc','rcd'))]}" class="oe_inline"/>
+				      				<field name="uom_id" attrs="{'readonly':[('readonly_bool','in',('row','rc','rcd'))]}" class="oe_inline" options="{'no_open':True,'no_create':True}"/>
+				      			</div>
+				      		</group>
+				      		<field name="readonly_bool" invisible="1"/>
+			      			<!--button type="object" string="Calculate Structure" name="calculate_structure" class="btn-primary"/-->
+					   	<field name="storage_locations" readonly="1" nolabel="1"/>
+		      			</form>
+		      		</field>
                                 <field name="storage_locations" readonly="1" nolabel="1" attrs="{'invisible':[('actual_location','!=',True)]}" />
-                                <field name="actual_location" invisible="1"/>
                        </field>
                        
 		</field>
@@ -75,10 +74,12 @@
         <field name="type">tree</field>
         <field name="arch" type="xml">
             <form string="Change Series">
-               <group>
+               <group col="4">
+               	<field name="location_id" readonly="1"/>
+               	<field name="ntype" readonly="1"/>
                 <field name="previous_series" readonly="1"/>
                 <field name="new_series" options="{'no_open':True,'no_create':True}" domain="[('id','!=',previous_series)]"/>
-                <button name="save" string="save" class="btn-primary"/>
+                <button name="update_series" string="Update" type="object" class="btn-primary"/>
               </group>
             </form>
         </field>

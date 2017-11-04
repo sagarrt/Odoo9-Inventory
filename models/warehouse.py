@@ -14,49 +14,52 @@ from dateutil.relativedelta import relativedelta
 class StockWarehouseMain(models.Model):
 	_name = "n.warehouse.placed.product"
 	_inherit = 'mail.thread'
-	_order = "n_row,n_shelf,n_case"
+	_order = "row,column,depth"
 	
 	@api.multi
-	@api.depends('n_qty','n_max_qty')
+	@api.depends('pkg_capicity','packages')
 	def _get_free_qty(self):
 		for rec in self:
-			if rec.n_max_qty < rec.n_qty:
-				raise UserError(_('Entered Store Quantity is shoud be less than Storage Capacity')) 
-			rec.n_free_qty=rec.n_max_qty-rec.n_qty
-			if rec.n_max_qty-rec.n_qty==0.0:
-				rec.state='full'
+			rec.n_free_qty=rec.pkg_capicity - rec.packages
 				
-	n_mo_number = fields.Many2one("mrp.production","MO Number")
-    	n_po_number = fields.Many2one("purchase.order","PO Number")
-    	n_do_number = fields.Many2one("stock.picking","DO Number")
-    	n_qc_number = fields.Many2one("stock.picking","QC Number")
+	mo_number = fields.Many2one("mrp.production","MO Number")
+    	po_number = fields.Many2one("purchase.order","PO Number")
     	
-	n_warehouse = fields.Many2one('stock.warehouse','Warehouse')
-	n_location = fields.Many2one('stock.location','Location')
-	n_row = fields.Char('Row')
-	n_shelf =fields.Char('Shelf')
-	n_case =fields.Char('Case')
+	warehouse = fields.Many2one('stock.warehouse','Warehouse')
+	location = fields.Many2one('stock.location','Location')
+	location_view = fields.Many2one('stock.location.view','Location',ondelete='cascade')
+	row = fields.Char('Row')
+	column =fields.Char('Column')
+	depth =fields.Char('Depth')
 	product_id = fields.Many2one('product.product', string="Product")
 	state= fields.Selection([('empty','Empty'),('partial','Partial'),('full','FULL'),('maintenance','In Maintenance')],default='empty')
 	label_status = fields.Selection([('done','Done'),('warehouse','Warehouse'),
 					 ('location','Location'),('row','Row'),
-					 ('shelf','Shelf'),('case','Case'),('less_qty','Less Qty')],default='done')
-	n_max_qty = fields.Float('Storage Capacity')
-	n_qty = fields.Float('Store Qunatity')
-	n_free_qty = fields.Float('Free Qunatity',compute="_get_free_qty",store=True)
+					 ('column','Column'),('depth','Depth'),('less_qty','Less Qty')],default='done')
+	max_qty = fields.Float('Storage Capacity',default=0.0)
+	pkg_capicity = fields.Float('Packages Capacity',default=0.0,help="maximum capacity of storage in packets, Caucluation based on product packaging")
+	pkg_capicity_unit = fields.Many2one("product.uom",'Unit')
+	free_qty = fields.Float('Free Quantity',compute="_get_free_qty")
+	
+	Packaging_type = fields.Many2one('product.packaging' ,string="Packaging",copy=True)
+	packages = fields.Float('No of Packages',default=0.0,help="Total No. of packets currently in Storage")
+	pkg_unit = fields.Many2one("product.uom",'Unit')
+	
+	total_quantity = fields.Float('Total Store Quantity',default=0.0, help="total quantity in product units")
+	qty_unit = fields.Many2one("product.uom",'Unit')
 	
 	@api.multi
 	def name_get(self):
 	    result = []
 	    for record in self:
-		name = str(record.n_location.name) +'/'+ str(record.n_row) +'/'+ str(record.n_shelf) +'/'+ str(record.n_case)
+		name = str(record.location.name)+'-'+str(record.location_view.name) +'/'+ str(record.row) +'/'+ str(record.column) +'/'+ str(record.depth)
 		result.append((record.id, name))
 	    return result
     
     	@api.multi
     	def open_stock_history(self):
     		for rec in self:
-    			order_tree = self.env.ref('api_inventory.stock_location_history_action_tree', False)
+    			order_tree = self.env.ref('Odoo9-Inventory.stock_location_history_action_tree', False)
 			return {
 			    'name':'History Location Product',
 			    'type': 'ir.actions.act_window',
@@ -76,27 +79,23 @@ class StockWarehouseMain(models.Model):
     		context = self._context.copy()
 		context.update({'default_product_id':rec.product_id.id,'default_stock_location':rec.id})
 	    	if self._context.get('add_stock'):
-    			order_form = self.env.ref('api_inventory.add_stock_location_operation_form', False)
-    			name='Add Stock In Location'
-    			context.update({'default_storage':rec.n_free_qty})
+    			order_form = self.env.ref('Odoo9-Inventory.add_stock_location_operation_form', False)
+    			name='Add Quantity In Store'
+    			context.update({'default_storage':0})
     			
 	    	if self._context.get('release_stock'):
-    			order_form = self.env.ref('api_inventory.remove_stock_location_operation_form', False)
-    			name='Remove Stock In Location'
-    			context.update({'default_qty':rec.n_qty})
+    			order_form = self.env.ref('Odoo9-Inventory.remove_stock_location_operation_form', False)
+    			name='Remove Quantity From Store'
+    			context.update({'default_qty':rec.total_quantity})
     			
 	    	if self._context.get('transfer_stock'):
-    			order_form = self.env.ref('api_inventory.transfer_stock_location_operation_form', False)
-    			name='Transfer Stock In Location'
-    			context.update({'default_qty':rec.n_qty})
+    			order_form = self.env.ref('Odoo9-Inventory.transfer_stock_location_operation_form', False)
+    			name='Transfer Quantity In Store To Store'
+    			#context.update({'default_qty':rec.n_qty})
     			
 		if self._context.get('update_stock'):
-    			order_form = self.env.ref('api_inventory.update_stock_location_operation_form', False)
-    			name='Update Stock In Location'
-    			qty=rec.product_id.qty_available
-			for line in self.search([('product_id','=',rec.product_id.id),('state','!=','empty')]):
-				qty -= line.n_qty
-    			context.update({'default_qty':qty,'default_storage':rec.n_free_qty})
+    			order_form = self.env.ref('Odoo9-Inventory.update_stock_location_operation_form', False)
+    			name='Update Quantity In Store'
     		if name and order_form:	
 			return {
 			    'name':name,
@@ -110,21 +109,27 @@ class StockWarehouseMain(models.Model):
 			    'target': 'new',
 			 }
 			 
-	@api.model
-	def create(self,vals):
-		if vals.get('n_qty') and vals.get('n_max_qty'):
-			if vals.get('n_qty') >= vals.get('n_max_qty'):
-				vals.update({'state':'full'})
-			else:
-				vals.update({'state':'partial'})
-		return super(StockWarehouseMain,self).create(vals)
-
+	#@api.model
+	#def create(self,vals):
+	#	if vals.get('n_qty') and vals.get('max_qty'):
+	#		if vals.get('n_qty') >= vals.get('max_qty'):
+	#			vals.update({'state':'full'})
+	#		else:
+	#			vals.update({'state':'partial'})
+	#	return super(StockWarehouseMain,self).create(vals)
 
 	@api.multi
 	def change_storage_capicity(self):
     		context = self._context.copy()
-		context.update({'default_previous_storage_capicity':self.n_max_qty,'default_stock_location':self.id})
-		order_form = self.env.ref('api_inventory.update_storage_capicity_operation_form', False)
+    		unit=self.env['product.uom'].search([('name','=ilike','pallet')],limit=1)
+    		packages = (self.pkg_capicity if self.pkg_capicity else 1) / (self.max_qty if self.max_qty else 1)
+		context.update({'default_previous_storage_capicity':self.max_qty,
+				'default_pre_capicity_unit':unit.id,
+				'default_used_storage':float(self.packages)/packages,
+				'default_stock_location':self.id,
+				'default_new_capicity_unit':unit.id,
+				'default_used_unit':unit.id})
+		order_form = self.env.ref('Odoo9-Inventory.update_storage_capicity_operation_form', False)
 		return {
 			    'name':"Update Storage Capicity",
 			    'type': 'ir.actions.act_window',
@@ -136,7 +141,20 @@ class StockWarehouseMain(models.Model):
 			    'context':context,
 			    'target': 'new',
 			 }
-	
+
+	@api.model
+    	def name_search(self, name, args=None, operator='ilike',limit=100):
+		if self._context.get('outgoing_wizard'):
+        		if self._context.get('product_id'):
+        			batch=[]
+        			if self._context.get('store_id'):
+	        			store=self._context.get('store_id')[0][2] if self._context.get('store_id')[0] else []
+                		material=self.search([('product_id','=',self._context.get('product_id'))])
+				wizard=self.env['stock.store.location.wizard'].search([('id','=',self._context.get('wizard_id'))])
+                		return [(rec.id,str(rec.location.name)+'-'+str(rec.location_view.name) +'/'+ str(rec.row) +'/'+ str(rec.column) +'/'+ str(rec.depth)) for rec in material if rec.id not in store ]
+        		return []
+        	return super(StockWarehouseMain,self).name_search(name, args, operator=operator,limit=limit)	
+        	
 class locationHistory(models.Model):
 	_name = "location.history"
 	
@@ -145,102 +163,11 @@ class locationHistory(models.Model):
 	qty = fields.Float('Quantity')
 	operation_name= fields.Char('Operation')
 	operation = fields.Selection([('mo','MO'),('po','PO'),('do','DO'),('transfer','Transfer')])
-	n_type = fields.Selection([('in','IN'),('out','OUT')],default='in')
+	ntype = fields.Selection([('in','IN'),('out','OUT')],default='in')
 	
-	n_mo_number = fields.Many2one("mrp.production","MO Number")
-    	n_po_number = fields.Many2one("purchase.order","PO Number")
-    	n_do_number = fields.Many2one("stock.picking","DO Number")
-    	n_qc_number = fields.Many2one("stock.picking","QC Number")
+	mo_number = fields.Many2one("mrp.production","MO Number")
+    	po_number = fields.Many2one("purchase.order","PO Number")
+    	do_number = fields.Many2one("stock.picking","DO Number")
+    	qc_number = fields.Many2one("stock.picking","QC Number")
     	
-class locationStockOperation(models.TransientModel):
-	_name = "location.stock.operation"
-	
-	stock_location = fields.Many2one('n.warehouse.placed.product','Stock Location')
-	new_stock_location = fields.Many2one('n.warehouse.placed.product','New Stock Location')
-	product_id = fields.Many2one('product.product', string="Product")
-	qty = fields.Float('Avaiable Quantity')
-	storage = fields.Float('Available Capicity')
-	add_qty = fields.Float('Add Quantity')
-	new_storage_capicity = fields.Float('New Storage Capacity')
-	previous_storage_capicity = fields.Float('Previous Storage Capacity')
-	
-	@api.multi
-	@api.onchange('new_stock_location')
-	def _get_free_qty(self):
-		for rec in self:
-			rec.storage=rec.new_stock_location.n_free_qty
-	
-	@api.multi
-	@api.onchange('product_id')
-	def _get_product_qty(self):
-	   if self._context.get('add_stock'):
-		for rec in self:
-			qty=rec.product_id.qty_available
-			for line in self.env['n.warehouse.placed.product'].search([('product_id','=',rec.product_id.id),('state','!=','empty')]):
-				qty -= line.n_qty
-			rec.qty=qty	
-			
-	@api.multi
-	def save(self):
-		n_type=''
-		if self._context.get('add_stock'):
-			n_type='in'
-			if self.add_qty >self.qty:
-				 raise UserError(_('Entered Quantity is shoud be less than Available Storage Capicty')) 
-			self.stock_location.product_id=self.product_id
-			self.stock_location.n_qty=self.add_qty
-			self.stock_location.state = 'full' if self.add_qty==self.qty else 'partial'
-			
-		if self._context.get('update_stock'):
-			n_type='in'
-			if self.add_qty >self.qty:
-				 raise UserError(_('Entered Quantity is shoud be less than Available Storage Capicty')) 
-			self.stock_location.n_qty+=self.add_qty
-			self.stock_location.state = 'full' if self.stock_location.n_qty==self.stock_location.n_max_qty else 'partial'
-			
-		if self._context.get('release_stock'):
-			n_type='out'
-			if self.stock_location.n_qty==self.add_qty:
-				self.stock_location.product_id=False
-				self.stock_location.n_qty=0.0
-				self.stock_location.state ='empty'
-			else:
-				self.stock_location.n_qty-=self.add_qty
-				self.stock_location.state ='partial'
-				
-		if self._context.get('transfer_stock'):
-			n_type='out'
-			if self.stock_location.n_qty==self.add_qty:
-				self.stock_location.product_id=False
-				self.stock_location.n_qty=0.0
-				self.stock_location.state = 'empty'
-			else:
-				self.stock_location.n_qty-=self.add_qty
-				self.stock_location.state='partial'
-			self.new_stock_location.product_id=self.product_id
-			self.new_stock_location.n_qty=self.add_qty
-			self.new_stock_location.state='full' if self.new_stock_location.n_free_qty == self.add_qty else 'partial'
-			self.env['location.history'].create({
-					'stock_location':self.new_stock_location.id,
-					'product_id':self.stock_location.product_id.id,
-					'qty':self.add_qty,
-					'n_type':'in',
-				})
-				
-		self.env['location.history'].create({
-					'stock_location':self.stock_location.id,
-					'product_id':self.stock_location.product_id.id,
-					'qty':self.add_qty,
-					'n_type':n_type,
-				})
-		return 
-		
-	@api.multi
-	def update_capicity(self):
-		for rec in self:
-			if rec.stock_location.n_qty > rec.new_storage_capicity:
-				raise UserError(_('Current cell Contain Store Qty is more Your New Storage Capicity')) 
-			rec.stock_location.n_max_qty = rec.new_storage_capicity	
-			rec.stock_location.message_post("<ul><li>Storage Capicity Increase :"+str(rec.new_storage_capicity))
-		return 
-		
+
