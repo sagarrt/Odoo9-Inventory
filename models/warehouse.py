@@ -104,6 +104,8 @@ class StockWarehouseMain(models.Model):
     			order_form = self.env.ref('Odoo9-Inventory.update_stock_location_operation_form', False)
     			name='Update Quantity In Store'
     		if name and order_form:	
+    			if rec.product_type == 'multi':
+				context.update({'multi_product_operation':True})
 			return {
 			    'name':name,
 			    'type': 'ir.actions.act_window',
@@ -160,6 +162,16 @@ class StockWarehouseMain(models.Model):
 				wizard=self.env['stock.store.location.wizard'].search([('id','=',self._context.get('wizard_id'))])
                 		return [(rec.id,str(rec.location.name)+'-'+str(rec.location_view.name) +'/'+ str(rec.row) +'/'+ str(rec.column) +'/'+ str(rec.depth)) for rec in material if rec.id not in store ]
         		return []
+        		
+		# used in transfer to location wizard in store location view
+		if self._context.get('operation_store'):
+        		if self._context.get('product_id'):
+        			if self._context.get('store_id'):
+                			store = self.search([('state','=','empty')])
+                			store += self.search([('id','!=',self._context.get('store_id')),('product_id','=',self._context.get('product_id'))])
+                			return [(rec.id,str(rec.n_location.name)+'-'+str(rec.n_location_view.name) +'/'+ str(rec.n_row) +'/'+ str(rec.n_column) +'/'+ str(rec.n_depth)) for rec in store ]
+        			return []
+        		return []
         	return super(StockWarehouseMain,self).name_search(name, args, operator=operator,limit=limit)	
         	
 class locationHistory(models.Model):
@@ -179,6 +191,13 @@ class locationHistory(models.Model):
     	
 class storeMultiProduct(models.Model):
 	_name="store.multi.product.data"
+	_rec_name="product_id"
+	
+	@api.multi
+	@api.depends('pkg_capicity','packages')
+	def _get_free_qty(self):
+		for rec in self:
+			rec.free_qty=rec.pkg_capicity - rec.packages
 	
 	store_id =fields.Many2one('n.warehouse.placed.product','Store Name')
 	product_id = fields.Many2one('product.product', string="Product")
@@ -195,3 +214,4 @@ class storeMultiProduct(models.Model):
 	total_quantity = fields.Float('Total Store Quantity',default=0.0, help="total quantity in product units")
 	total_qty_unit = fields.Many2one("product.uom",'Unit')
 
+		

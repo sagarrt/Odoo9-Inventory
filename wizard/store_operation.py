@@ -13,6 +13,7 @@ class locationStockOperation(models.TransientModel):
 	stock_location = fields.Many2one('n.warehouse.placed.product','Stock Location')
 	new_stock_location = fields.Many2one('n.warehouse.placed.product','New Stock Location')
 	product_id = fields.Many2one('product.product', string="Product")
+	multi_product_id = fields.Many2one('store.multi.product.data', string="Product")
 	unit = fields.Many2one('product.uom','Unit',related="product_id.uom_id",readonly=True)
 	qty = fields.Float('Avaiable Quantity',compute='_get_product_qty',help='Available Product Quantity Which is not added in any Store Locations')
 	storage = fields.Float('Available Capicity',compute='_get_storage_qty',help='Available storage capicity calculate using primary and secondary packaging qty')
@@ -43,23 +44,38 @@ class locationStockOperation(models.TransientModel):
 	@api.multi
 	@api.onchange('product_id') # make packaging field empty and add available quantity 
 	def onchange_product_qty(self):
-	   if self._context.get('add_stock') or self._context.get('update_stock'):
-		for rec in self:
-		    if rec.product_id:
-			qty=rec.product_id.qty_available
-			# find total sotre quantity and substract from avilabel product quantity to get quantity available for store
-			for line in self.env['n.warehouse.placed.product'].search([('product_id','=',rec.product_id.id),('state','!=','empty')]):
-				qty -= line.total_quantity
-			for line in self.env['store.multi.product.data'].search([('product_id','=',rec.product_id.id)]):
-				qty -= line.total_quantity		
+		'''Onchange function to get product quantity for operation '''
+		if (self._context.get('add_stock') or self._context.get('update_stock')) and not self._context.get('multi_product_operation'):
+			for rec in self:
+			    if rec.product_id:
+				qty=rec.product_id.qty_available
+				# find total sotre quantity and substract from avilabel product quantity to get quantity available for store
+				for line in self.env['n.warehouse.placed.product'].search([('product_id','=',rec.product_id.id),('state','!=','empty')]):
+					qty -= line.total_quantity
+				for line in self.env['store.multi.product.data'].search([('product_id','=',rec.product_id.id)]):
+					qty -= line.total_quantity		# Substraction
 				
-			rec.qty=qty
-			if self._context.get('add_stock'): # set values to NUll on product onchange
-				rec.primary_packaging=False
-				rec.secondary_packaging=False
-				rec.storage=0.0
-			if self._context.get('update_stock'): # update available storage in Update form in packaging unit
-				rec.storage=(rec.stock_location.pkg_capicity-rec.stock_location.packages)*rec.stock_location.Packaging_type.qty
+				rec.qty=qty
+				if self._context.get('add_stock'): # set values to NUll on product onchange
+					rec.primary_packaging=False
+					rec.secondary_packaging=False
+					rec.storage=0.0
+				if self._context.get('update_stock'): # update available storage in Update form in packaging unit
+					rec.storage=(rec.stock_location.pkg_capicity-rec.stock_location.packages)*rec.stock_location.Packaging_type.qty
+				
+		flag1 = self._context.get('transfer_stock')
+		flag2 = self._context.get('release_stock')
+		flag3 = self._context.get('update_stock')
+		if (flag1 or flag2 or flag3) and self._context.get('multi_product_operation'):  # get available quantity for Transfer operation
+			for rec in self:
+				qty=0
+				packaging=False
+				for store in rec.stock_location.multi_product_ids:
+					if store.product_id.id==rec.product_id.id:
+						qty += store.total_quantity
+						packaging=store.Packaging_type
+				rec.qty=qty
+				rec.primary_packaging=packaging
 			
 	#write onchange beacuse it will change the value of storage fields
 	@api.multi

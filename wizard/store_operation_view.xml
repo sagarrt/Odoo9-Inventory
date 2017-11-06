@@ -47,56 +47,69 @@
 		<field name="model">location.stock.operation</field>
 		<field name="type">tree</field>
 		<field name="arch" type="xml">
-		    <form string="Add Stock">
+	    	<form string="Update Stock Quantity">
+		       <group>
+	      	   		<group>
+			    		<field name="product_id" context="{'multi_loc':True,'store_id':stock_location}" readonly="not context.get('multi_product_operation')" options="{'no_open':True,'no_create':True}"/>
+				</group>
+	    			<group>
+				</group>
+		       </group>
 		       <group col="4">
-		        <field name="product_id" readonly="1"/>
-		        <field name="stock_location" readonly="1"/>
-		        <label for="qty"/>
-		        <div>
-		        	<field name="qty" nolabel="1" class="oe_inline"/>
-		        	<field name="unit" nolabel="1"  class="oe_inline"/>
-		        </div>
-		        <label for="storage"/>
-		        <div>
-		        	<field name="storage"  readonly="1" nolabel="1" class="oe_inline"/>
-		        	<field name="storage_unit" nolabel="1"  class="oe_inline"/>
-		        </div>
-		        <label for="add_qty"/>
-		        <div>
-		        	<field name="add_qty" nolabel="1" class="oe_inline"/>
-		        	<field name="add_unit" nolabel="1"  class="oe_inline"/>
-		        </div>
-		        <field name="packaging_qty" readonly="1" attrs="{'invisible':[('packaging_qty','=',False)]}"/>
-		        <button name="save" string="Save" type="object" class="btn-primary"/>
-		      </group>
-		    </form>
+				<field name="stock_location" readonly="1"/>
+	       			<label for="qty"/>
+		       		<div>
+		       			<field name="qty" nolabel="1" class="oe_inline"/>
+		       			<field name="unit" nolabel="1"  class="oe_inline"/>
+		       		</div>
+		       		<label for="storage"/>
+		       		<div>
+		       			<field name="storage"  readonly="1" nolabel="1" class="oe_inline"/>
+		       			<field name="storage_unit" nolabel="1"  class="oe_inline"/>
+		       		</div>
+		       		<label for="add_qty"/>
+		       		<div>
+		       			<field name="add_qty" nolabel="1" class="oe_inline"/>
+		       			<field name="add_unit" nolabel="1"  class="oe_inline"/>
+		       		</div>
+		       		<field name="packaging_qty" readonly="1" attrs="{'invisible':[('packaging_qty','=',False)]}"/>
+				<button name="save" string="Save" type="object" class="btn-primary"/>
+		       </group>
+	    	</form>
 		</field>
 	    </record>
+	    
 	  <!--Release stock from location-->
 	    <record id="remove_stock_location_operation_form" model="ir.ui.view">
 		<field name="name">Remove Stock View</field>
 		<field name="model">location.stock.operation</field>
 		<field name="type">tree</field>
 		<field name="arch" type="xml">
-		    <form string="Release">
-		       <group col="4">
-		          <field name="product_id" readonly="1"/>
-		          <field name="stock_location" readonly="1"/>
-		          <field name="release_unit" required="1" options="{'no_open':True,'no_create':True}" context="{'release':True,'release_product':product_id}"/>
-		          <label for="qty"/>
-		          <div>
-		        	<field name="qty" readonly="1" nolabel="1" class="oe_inline"/>
-		        	<field name="unit" nolabel="1"  class="oe_inline"/>
-		          </div>
-		          <label for="add_qty"/>
-		          <div>
-		        	<field name="add_qty" nolabel="1" class="oe_inline"/>
-		          </div>
-		          <field name="packaging_qty" readonly="1" attrs="{'invisible':[('packaging_qty','=',False)]}"/>
-		       </group>
-		       <button name="save" string="Save" type="object" class="btn-primary"/>
-		    </form>
-		</field>
+	    	<form string="Release Product quantity">
+    			<group>
+	      	   		<group>
+			    		<field name="product_id" context="{'multi_loc':True,'store_id':stock_location}" readonly="not context.get('multi_product_operation')" options="{'no_open':True,'no_create':True}"/>
+				</group>
+	    			<group>
+				</group>
+      	    		</group>
+			<group col="4">
+				<field name="stock_location" readonly="1"/>
+				<field name="release_unit" required="1" options="{'no_open':True,'no_create':True}" context="{'release':True,'release_product':product_id}"/>
+				<label for="qty"/>
+				<div>
+					<field name="qty" readonly="1" nolabel="1" class="oe_inline"/>
+					<field name="unit" nolabel="1"  class="oe_inline"/>
+				</div>
+				<label for="add_qty"/>
+				<div>
+					<field name="add_qty" nolabel="1" class="oe_inline"/>
+				</div>
+				<field name="packaging_qty" readonly="1" attrs="{'invisible':[('packaging_qty','=',False)]}"/>
+			</group>
+			<button name="save" string="Save" type="object" class="btn-primary"/>
+	    	</form>
+	    	</field>
 	    </record>
 	    
 	    <!--Transfer stock location-->
@@ -106,25 +119,28 @@
 		<field name="type">tree</field>
 		<field name="arch" type="xml">
 		    <form string="Transfer">
-		      <group>
-		        <field name="product_id" readonly="1"/>
+		    	<group invisible="not context.get('multi_product_operation')">
+				<field name="multi_product_id" readonly="not context.get('multi_product_operation')" options="{'no_open':True,'no_create':True}" domain="[('store_id','=',stock_location)]"/>
 		      </group>
-		      <group col="4">
-		        <field name="stock_location" readonly="1"/>
-		        <field name="new_stock_location" options="{'no_open':True,'no_create':True}" string="New Location" domain="['|',('product_id','=','product_id'),('state','in',('empty','partial')),('n_location','!=',stock_location)]"/>
-		        <label for="qty"/>
-		        <div>
-		        	<field name="qty" nolabel="1" class="oe_inline"/>
-		        	<field name="unit" nolabel="1"  class="oe_inline"/>
-		        </div>
-		        <field name="storage" string="Available Storage Capicity" readonly="1"/>
-		        <label for="add_qty"/>
-		        <div>
-		        	<field name="add_qty" nolabel="1" class="oe_inline"/>
-		        	<field name="add_unit" nolabel="1"  class="oe_inline"/>
-		        </div>
+		      <group invisible="context.get('multi_product_operation')">
+				<field name="product_id"  readonly="1"/>
 		      </group>
-		      <button name="save" string="Save" type="object" class="btn-primary"/>
+              		<group col="4">
+				<field name="stock_location" readonly="1"/>
+				<field name="new_stock_location" options="{'no_open':True,'no_create':True}" string="New Location"  context="{'operation_store':True,'product_id':product_id,'store_id':stock_location}" />
+				<label for="qty"/>
+				<div>
+					<field name="qty" nolabel="1" class="oe_inline"/>
+					<field name="unit" nolabel="1"  class="oe_inline"/>
+				</div>
+				<field name="storage" string="Available Storage Capicity" readonly="1"/>
+				<label for="add_qty"/>
+				<div>
+					<field name="add_qty" nolabel="1" class="oe_inline"/>
+					<field name="add_unit" nolabel="1"  class="oe_inline"/>
+				</div>
+              		</group>
+		      	<button name="save" string="Save" type="object" class="btn-primary"/>
 		    </form>
 		</field>
 	    </record>

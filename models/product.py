@@ -15,11 +15,11 @@ class productTemplate(models.Model):
 
 	@api.multi
 	def open_inventory_location(self):
+		''' function to open stock location view'''
 		order_tree = self.env.ref('Odoo9-Inventory.product_stock_location_tree', False)
 		order_form = self.env.ref('Odoo9-Inventory.product_stock_location_form', False)
 		product_id = self.env['product.product'].search([('product_tmpl_id','=',self.id)])
 		product_id = [p.id for p in product_id]
-		#store_ids=self.env['n.warehouse.placed.product'].search()
 		return {
 		    'name':'Inventory Location Product',
 		    'type': 'ir.actions.act_window',
@@ -32,18 +32,24 @@ class productTemplate(models.Model):
 		    'target': 'current',
 		 }
 		 
-	@api.multi
-	def open_stock_location(self):
-		return {
-			}
-
 class productProduct(models.Model):
 	_inherit = "product.product"
 
 	@api.multi
 	def open_inventory_location(self):
 		return self.product_tmpl_id.open_inventory_location()
-		
+
+	@api.model
+	def name_search(self,name, args=None, operator='ilike', limit=100):
+		''' function to show product from multi store product location'''
+		if self._context.get('multi_loc'):
+			if self._context.get('store_id'):
+				store_ids=self.env['store.multi.product.data'].search([('store_id','=',self._context.get('store_id'))])
+		        	return [(rec.product_id.id,rec.product_id.name) for rec in store_ids]
+			return []
+	    	return super(productProduct,self).name_search(name, args, operator=operator, limit=limit)
+
+	# inherite method to restrict quantity to show only  in store location	
     	@api.v7
 	def _get_domain_locations(self,cr, uid, ids, context=None):
 		'''
@@ -121,10 +127,9 @@ class productPackging(models.Model):
     uom_id = fields.Many2one('product.uom','Unit')
     packg_uom = fields.Many2one('product.uom','Packaging Unit')
 
-    
     @api.onchange('uom_id','qty','packg_uom')
     def get_name(self):
-    	print "kkkkkkkkkkkkkkkkkkkkkkkkkk"
+    	'''function to create name of pakcaging'''
 	for line in self:
 		uom_name=qty=category=''
 		if line.uom_id:
@@ -134,7 +139,6 @@ class productPackging(models.Model):
 		if line.packg_uom:
 			category=line.packg_uom.name
 		line.name = str(str(qty)+str(uom_name)+"/"+str(category))
-
 
     @api.model
     def name_search(self,name, args=None, operator='ilike',limit=100):
