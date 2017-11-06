@@ -75,11 +75,9 @@ class StockStoreLocationWizard(models.TransientModel):
     	self.ensure_one()
     	for line in self.locations:
     	   product_id=False
-    	   Sale_line_id =False
     	   mo_number=self.env['mrp.production'].search([('name','=',self.picking.origin)])
     	   for operation in self.picking.pack_operation_product_ids:
     	   	product_id= operation.product_id if operation.product_id else False
-    	   	Sale_line_id= operation.n_sale_order_line if operation.n_sale_order_line else False
     	   if line.select_store and line.batch_ids:
     	   	batches_id=[]
     	   	body=''
@@ -100,26 +98,42 @@ class StockStoreLocationWizard(models.TransientModel):
     							'store_id':line.locations.id,'quantity':qty,
     							'lot_number':res.lot_id.id,'batch_number':res.id,
     							})
-		body+="<ul>New Quantity Added in Store</ul>"
-		line.locations.product_id=product_id.id
-		body+="<li>Product add : "+str(product_id.name)+" </li>"
-		line.locations.pkg_capicity=self.picking.pallet_size
-		line.locations.pkg_capicity_unit =self.picking.pallet_qty_unit.id
-		body+="<li>Package Capicity : "+str(self.picking.pallet_size)+" "+str(self.picking.pallet_qty_unit.name)+" </li>"
-		line.locations.packages = self.picking.pallet_size
-		line.locations.pkg_unit = self.picking.pallet_qty_unit.id
-		body+="<li>No of Packages : "+str(self.picking.pallet_size)+" "+str(self.picking.pallet_qty_unit.name)+" </li>"
-		line.locations.total_quantity = total_qty 
-		line.locations.qty_unit = unit.id if unit else False
-		body+="<li>Quantity Added : "+str(qty)+" "+str(unit.name if unit else '')+" </li>"
-		line.locations.Packaging_type = self.picking.packaging.id
-		body+="<li>Packaging : "+str(self.picking.packaging.name)+" </li>"
+		if location.product_type=='single':
+			body+="<ul>New Quantity Added in Store</ul>"
+			line.locations.product_id=product_id.id
+			body+="<li>Product add : "+str(product_id.name)+" </li>"
+			line.locations.pkg_capicity=self.picking.pallet_size
+			line.locations.pkg_capicity_unit =self.picking.pallet_qty_unit.id
+			body+="<li>Package Capicity : "+str(self.picking.pallet_size)+" "+str(self.picking.pallet_qty_unit.name)+" </li>"
+			line.locations.packages = self.picking.pallet_size
+			line.locations.pkg_unit = self.picking.pallet_qty_unit.id
+			body+="<li>No of Packages : "+str(self.picking.pallet_size)+" "+str(self.picking.pallet_qty_unit.name)+" </li>"
+			line.locations.total_quantity = total_qty 
+			line.locations.total_qty_unit = unit.id if unit else False
+			body+="<li>Quantity Added : "+str(qty)+" "+str(unit.name if unit else '')+" </li>"
+			line.locations.Packaging_type = self.picking.packaging.id
+			body+="<li>Packaging : "+str(self.picking.packaging.name)+" </li>"
+		elif location.product_type=='multi':
+			body+="<ul>New Quantity Added in Store</ul>"
+			store_vals={'product_id':product_id.id}
+			body+="<li>Product add : "+str(product_id.name)+" </li>"
+			store_vals.update({'pkg_capicity':self.picking.pallet_size})
+			store_vals.update({'pkg_capicity_unit':self.picking.pallet_qty_unit.id})
+			body+="<li>Package Capicity : "+str(self.picking.pallet_size)+" "+str(self.picking.pallet_qty_unit.name)+" </li>"
+			store_vals.update({'locations.packages': self.picking.pallet_size})
+			store_vals.update({'pkg_unit': self.picking.pallet_qty_unit.id})
+			body+="<li>No of Packages : "+str(self.picking.pallet_size)+" "+str(self.picking.pallet_qty_unit.name)+" </li>"
+			store_vals.update({'total_quantity': total_qty}) 
+			store_vals.update({'total_qty_unit': unit.id if unit else False})
+			body+="<li>Quantity Added : "+str(qty)+" "+str(unit.name if unit else '')+" </li>"
+			store_vals.update({'Packaging_type': self.picking.packaging.id})
+			body+="<li>Packaging : "+str(self.picking.packaging.name)+" </li>"
+			line.locations.multi_product=[(0,0,store_vals)]
+			
 		line.locations.state = 'full'
 		line.locations.message_post(body)
-		line.locations.mo_number=mo_number.id if mo_number else False
-		if Sale_line_id:
-			line.sale_reserve_ids=[(0,0,{'store_id':line.locations.id,'sale_line_id':Sale_line_id.id,
-					    'sale_id':Sale_line_id.order_id.id,'product_qty':qty,'uom_id':unit.id if unit else False})]
+		line.locations.n_mo_number=mo_number.id if mo_number else False
+		
     	if self.back_order_id:
     		self.back_order_id._process(cancel_backorder=self.backorder)
     		self.picking.do_transfer()

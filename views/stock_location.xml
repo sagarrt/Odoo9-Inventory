@@ -38,6 +38,7 @@
 		      				<field name="row" />
 		      				<field name="column"/>
 		      				<field name="depth"/>
+		      				<field name="product_type"/>
 		      			</tree>
 		      			<form name="storage_location">
 		      				<field name="name" />
@@ -56,6 +57,7 @@
 				      				<field name="storage_capacity" attrs="{'readonly':[('readonly_bool','in',('row','rc','rcd'))]}" class="oe_inline"/>
 				      				<field name="uom_id" attrs="{'readonly':[('readonly_bool','in',('row','rc','rcd'))]}" class="oe_inline" options="{'no_open':True,'no_create':True}"/>
 				      			</div>
+				      			<field name="product_type" required="1"/>
 				      		</group>
 				      		<field name="readonly_bool" invisible="1"/>
 			      			<!--button type="object" string="Calculate Structure" name="calculate_structure" class="btn-primary"/-->

@@ -15,16 +15,20 @@ class productTemplate(models.Model):
 
 	@api.multi
 	def open_inventory_location(self):
-		order_tree = self.env.ref('api_inventory.product_stock_location_tree', False)
-		order_form = self.env.ref('api_inventory.product_stock_location_from', False)
+		order_tree = self.env.ref('Odoo9-Inventory.product_stock_location_tree', False)
+		order_form = self.env.ref('Odoo9-Inventory.product_stock_location_form', False)
+		product_id = self.env['product.product'].search([('product_tmpl_id','=',self.id)])
+		product_id = [p.id for p in product_id]
+		#store_ids=self.env['n.warehouse.placed.product'].search()
 		return {
 		    'name':'Inventory Location Product',
 		    'type': 'ir.actions.act_window',
 		    'view_type': 'form',
 		    'view_mode': 'tree',
 		    'res_model': 'n.warehouse.placed.product',
-		    'views': [(order_tree.id, 'tree'),(order_form.id, 'from')],
-		    'view_id': order_form.id,
+		    'views': [(order_tree.id,'tree'),(order_form.id,'form')],
+		    'view_id': order_tree.id,
+		    'domain':['|',('multi_product_ids.product_id','in',product_id),('product_id','in',product_id)],
 		    'target': 'current',
 		 }
 		 
@@ -117,9 +121,10 @@ class productPackging(models.Model):
     uom_id = fields.Many2one('product.uom','Unit')
     packg_uom = fields.Many2one('product.uom','Packaging Unit')
 
-    @api.multi
-    @api.onchange('uom_id','qty','unit_id')
+    
+    @api.onchange('uom_id','qty','packg_uom')
     def get_name(self):
+    	print "kkkkkkkkkkkkkkkkkkkkkkkkkk"
 	for line in self:
 		uom_name=qty=category=''
 		if line.uom_id:

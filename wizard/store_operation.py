@@ -50,6 +50,9 @@ class locationStockOperation(models.TransientModel):
 			# find total sotre quantity and substract from avilabel product quantity to get quantity available for store
 			for line in self.env['n.warehouse.placed.product'].search([('product_id','=',rec.product_id.id),('state','!=','empty')]):
 				qty -= line.total_quantity
+			for line in self.env['store.multi.product.data'].search([('product_id','=',rec.product_id.id)]):
+				qty -= line.total_quantity		
+				
 			rec.qty=qty
 			if self._context.get('add_stock'): # set values to NUll on product onchange
 				rec.primary_packaging=False
@@ -67,8 +70,13 @@ class locationStockOperation(models.TransientModel):
 		    if rec.product_id:
 			qty=rec.product_id.qty_available
 			# find total sotre quantity and substract from avilabel product quantity to get quantity available for store
+			#for single product store
 			for line in self.env['n.warehouse.placed.product'].search([('product_id','=',rec.product_id.id),('state','!=','empty')]):
 				qty -= line.total_quantity		# Substraction
+				
+			#for Multi product store
+			for line in self.env['store.multi.product.data'].search([('product_id','=',rec.product_id.id)]):
+				qty -= line.total_quantity
 			rec.qty=qty
 	   if self._context.get('release_stock'):  # get available quantity for release operation
 		for rec in self:
@@ -104,13 +112,13 @@ class locationStockOperation(models.TransientModel):
 	def _get_packaging_qty(self):
 		for rec in self:
 		    if rec.add_qty >0.0 and rec.primary_packaging.qty >0.0:
-			packaging_qty = str(rec.add_qty/rec.primary_packaging.qty)+" "+str(rec.secondary_packaging.unit_id.name)
+			packaging_qty = str(rec.add_qty/rec.primary_packaging.qty)+" "+str(rec.secondary_packaging.packg_uom.name)
 			rec.packaging_qty=packaging_qty
     		    elif self._context.get('update_stock'):
     		    	rec.packaging_qty = str(rec.add_qty/rec.stock_location.Packaging_type.qty)+" "+str(rec.stock_location.Packaging_type.uom_id.name)
 	    	    elif self._context.get('release_stock'):
 	    	    	if rec.release_unit and rec.release_unit.id != rec.unit.id:
-	    	    		unit_id=self.env['product.packaging'].search([('product_tmpl_id','=',rec.product_id.product_tmpl_id.id),('unit_id','=',rec.unit.id),('uom_id','=',rec.release_unit.id)])
+	    	    		unit_id=self.env['product.packaging'].search([('product_tmpl_id','=',rec.product_id.product_tmpl_id.id),('packg_uom','=',rec.unit.id),('uom_id','=',rec.release_unit.id)])
 	    	    		qty= unit_id.qty if unit_id else 1
     		    		rec.packaging_qty = str(rec.add_qty/qty)+" "+str(rec.release_unit.name)
 	    		else:
@@ -127,6 +135,7 @@ class locationStockOperation(models.TransientModel):
 	def save(self):
 		n_type=''
 		body=""
+		stock_product_id=False
 		if self.add_qty < 0.0:
 			raise UserError(_('Please Enter Proper Quantity'))
 		if self._context.get('add_stock'):
@@ -135,24 +144,45 @@ class locationStockOperation(models.TransientModel):
 			if self.add_qty >self.qty:
 				 raise UserError(_('Entered Quantity is shoud be less than Available Quantity'))
 			if self.add_qty >self.storage:
-				 raise UserError(_('Entered Quantity is shoud be less than Available Capicty')) 
-			self.stock_location.product_id=self.product_id
-			body+="<li>Product add : "+str(self.product_id.name)+" </li>"
-			if self.primary_packaging and self.secondary_packaging:
-				capacity=self.secondary_packaging.qty*self.stock_location.max_qty
-				self.stock_location.pkg_capicity=capacity
-				self.stock_location.pkg_capicity_unit =self.secondary_packaging.unit_id.id
-				body+="<li>Packag Capicity : "+str(capacity)+" "+str(self.secondary_packaging.unit_id.name)+" </li>"
-			self.stock_location.packages = self.add_qty/self.primary_packaging.qty
-			self.stock_location.pkg_unit = self.secondary_packaging.unit_id.id
-			body+="<li>No of Packages : "+str(self.add_qty/self.primary_packaging.qty)+" "+str(self.secondary_packaging.unit_id.name)+" </li>"
-			self.stock_location.total_quantity = self.add_qty
-			self.stock_location.qty_unit = self.add_unit.id
-			body+="<li>Quantity Added : "+str(self.add_qty)+" "+str(self.add_unit.name)+" </li>"
-			self.stock_location.Packaging_type = self.primary_packaging.id
-			body+="<li>Packaging : "+str(self.primary_packaging.name)+" </li>"
-			self.stock_location.state = 'full' if self.stock_location.pkg_capicity==self.stock_location.packages else 'partial'
+				 raise UserError(_('Entered Quantity is shoud be less than Available Capicty'))
 			
+			if  self.stock_location.product_type == 'single':
+				self.stock_location.product_id=self.product_id
+				body+="<li>Product add : "+str(self.product_id.name)+" </li>"
+				if self.primary_packaging and self.secondary_packaging:
+					capacity=self.secondary_packaging.qty*self.stock_location.max_qty
+					self.stock_location.pkg_capicity=capacity
+					self.stock_location.pkg_capicity_unit =self.secondary_packaging.packg_uom.id
+					body+="<li>Packag Capicity : "+str(capacity)+" "+str(self.secondary_packaging.packg_uom.name)+" </li>"
+				self.stock_location.packages = self.add_qty/self.primary_packaging.qty
+				self.stock_location.pkg_unit = self.secondary_packaging.packg_uom.id
+				body+="<li>No of Packages : "+str(self.add_qty/self.primary_packaging.qty)+" "+str(self.secondary_packaging.packg_uom.name)+" </li>"
+				self.stock_location.total_quantity = self.add_qty
+				self.stock_location.total_qty_unit = self.add_unit.id
+				body+="<li>Quantity Added : "+str(self.add_qty)+" "+str(self.add_unit.name)+" </li>"
+				self.stock_location.Packaging_type = self.primary_packaging.id
+				body+="<li>Packaging : "+str(self.primary_packaging.name)+" </li>"
+				
+			elif self.stock_location.product_type == 'multi':
+				add_vals={'product_id':self.product_id.id}
+				body+="<li>Product add : "+str(self.product_id.name)+" </li>"
+				if self.primary_packaging and self.secondary_packaging:
+					capacity=self.secondary_packaging.qty*self.stock_location.max_qty
+					add_vals.update({'pkg_capicity':capacity})
+					add_vals.update({'pkg_capicity_unit':self.secondary_packaging.packg_uom.id})
+					body+="<li>Packag Capicity : "+str(capacity)+" "+str(self.secondary_packaging.packg_uom.name)+" </li>"
+				add_vals.update({'packages':self.add_qty/self.primary_packaging.qty})
+				add_vals.update({'pkg_unit':self.secondary_packaging.packg_uom.id})
+				body+="<li>No of Packages : "+str(self.add_qty/self.primary_packaging.qty)+" "+str(self.secondary_packaging.packg_uom.name)+" </li>"
+				add_vals.update({'total_quantity':self.add_qty})
+				add_vals.update({'total_qty_unit':self.add_unit.id})
+				body+="<li>Quantity Added : "+str(self.add_qty)+" "+str(self.add_unit.name)+" </li>"
+				add_vals.update({'Packaging_type':self.primary_packaging.id})
+				body+="<li>Packaging : "+str(self.primary_packaging.name)+" </li>"
+				
+				self.stock_location.multi_product_ids=[(0,0,add_vals)]
+			self.stock_location.state = 'full' if self.stock_location.pkg_capicity==self.stock_location.packages else 'partial'
+			stock_product_id=self.product_id.id
 		if self._context.get('update_stock'):
 			n_type='in'
 			body+="<ul>Quantity Updated in Store"
@@ -163,9 +193,10 @@ class locationStockOperation(models.TransientModel):
 			self.stock_location.packages += (self.add_qty/self.stock_location.Packaging_type.qty)
 			body+="<li>Packages : "+str(self.add_qty/self.stock_location.Packaging_type.qty)+" </li></ul>"
 			self.stock_location.state = 'full' if self.add_qty==self.storage else 'partial'
-			
+			stock_product_id=self.stock_location.product_id.id
 		if self._context.get('release_stock'):
 			n_type='out'
+			stock_product_id=self.stock_location.product_id.id	
 			if self.add_qty == self.qty:
 				body+="<li> <font color='red'>Make Store Empty</font></li>"
 				self.stock_location.state = 'empty'
@@ -186,9 +217,9 @@ class locationStockOperation(models.TransientModel):
 				self.stock_location.packages -= (self.add_qty/qty)
 				body+="<li>Packages : "+str(self.add_qty/qty)+" </li></ul>"
 			self.stock_location.total_quantity -= self.add_qty	
-				
 		if self._context.get('transfer_stock'):
 			n_type='out'
+			stock_product_id=self.stock_location.product_id.id	
 			if self.add_qty >self.qty:
 				 raise UserError(_('Entered Quantity is shoud be less than Available Quantity')) 
 			self.stock_location.total_quantity -= self.add_qty
@@ -228,14 +259,14 @@ class locationStockOperation(models.TransientModel):
 				
 			self.env['location.history'].create({
 					'stock_location':self.new_stock_location.id,
-					'product_id':self.stock_location.product_id.id,
+					'product_id':stock_product_id,
 					'qty':self.add_qty,
 					'n_type':'in',
 				})
 		if body:
 			self.stock_location.message_post(body)		
 		self.env['location.history'].create({'stock_location':self.stock_location.id,
-							'product_id':self.stock_location.product_id.id,
+							'product_id':stock_product_id,
 							'qty':self.add_qty,
 							'n_type':n_type,
 				})

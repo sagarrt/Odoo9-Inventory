@@ -53,6 +53,7 @@ class stockLocationview(models.Model):
 	readonly_bool = fields.Selection([('row','Row'),('rc','Row Column'),('rcd','Row Column Depth')],"Series bool")
 	storage_capacity = fields.Integer('Capacity',help="Sotrage capicity of each Cell , In Pallets.",default=1)
 	uom_id = fields.Many2one('product.uom',"Unit")
+	product_type = fields.Selection([('single','Single Product'),('multi','Multi Product')],'Product Type')
 	storage_locations = fields.Html('Location View',compute="_create_html_view")
 
 	@api.model
@@ -71,7 +72,7 @@ class stockLocationview(models.Model):
 	@api.multi
 	def unlink(self):
 		for rec in self:
-			search_id=self.env['n.warehouse.placed.product'].search([('n_location_view','=',rec.id),
+			search_id=self.env['n.warehouse.placed.product'].search([('location_view','=',rec.id),
 								('product_id','!=',False)])
 			if search_id:
 				raise UserError("You can't delete this record, storage location which are related to this are not empty,if you want to delete this record empty that location first ")
@@ -126,7 +127,7 @@ class stockLocationview(models.Model):
 								('row','=',str(n_row)),
 								('column','=',str(n_column)),
 								('depth','=',str(n_depth)),
-								('max_qty','=',rec.storage_capacity)])
+								])
 								
 						if not search_id:
 							self.env['n.warehouse.placed.product'].create({
@@ -136,7 +137,9 @@ class stockLocationview(models.Model):
 								'row':str(n_row),
 								'column':str(n_column),
 								'depth':str(n_depth),
+								'product_type':rec.product_type,
 								'max_qty':rec.storage_capacity,
+								'qty_unit':rec.uom_id.id,
 								})
 						flag='rcd'
 			rec.readonly_bool=flag
@@ -235,23 +238,10 @@ class stockLocationview(models.Model):
 								('location_view','=',rec.id),
 								('row','=',str(n_row)),
 								('column','=',str(n_column)),
-								('depth','=',str(n_depth)),
-								('max_qty','=',rec.storage_capacity)])
+								('depth','=',str(n_depth)),])
+								
 						per=100.0/rec.column
 						if search_id:
-							if search_id.product_id	:
-								view +='<td width="'+str(per)+'%" style="background-color:green;" > <font color="white">'
-								view +=str(n_row)+str(n_column)+str(n_depth)
-								if search_id.product_id:
-									view +='<ul><li>'+str(search_id.product_id.name)+'</li>'
-								if search_id.total_quantity:
-									view +='<li>'+str(search_id.total_quantity)+str(search_id.qty_unit.name)+'</li>'
-								if search_id.Packaging_type:
-									view +='<li>'+str(search_id.Packaging_type.name)+'</li></ul></font>'
-							else:
-								view +='<td width="'+str(per)+'%">'
-								view +=str(n_row)+str(n_column)+str(n_depth)
-								
 							base_url = self.env['ir.config_parameter'].get_param('web.base.url')
 					                query = {'db': self._cr.dbname}
 					                fragment = {
@@ -261,8 +251,21 @@ class stockLocationview(models.Model):
 								'id': search_id.id,
 								}
 						        url = urljoin(base_url, "/web?%s#%s" % (urlencode(query), urlencode(fragment)))
-						        text_link = _("""<a href="%s">%s</a> """) % (url,str(n_row)+str(n_column)+str(n_depth))
-							view +='<li >'+str(text_link)+'</li>'
+						        
+							if search_id.product_id	:
+								view +='<td width="'+str(per)+'%" style="background-color:green;" > <font color="white">'
+								text_link = _("""<a href="%s">%s</a> """) % (url,str(n_row)+str(n_column)+str(n_depth))
+								view +='<li >'+str(text_link)+'</li>'
+								if search_id.product_id:
+									view +='<ul><li>'+str(search_id.product_id.name)+'</li>'
+								if search_id.total_quantity:
+									view +='<li>'+str(search_id.total_quantity)+str(search_id.qty_unit.name)+'</li>'
+								if search_id.Packaging_type:
+									view +='<li>'+str(search_id.Packaging_type.name)+'</li></ul></font>'
+							else:
+								view +='<td width="'+str(per)+'%">'
+								text_link = _("""<a href="%s">%s</a> """) % (url,str(n_row)+str(n_column)+str(n_depth))
+								view +='<li >'+str(text_link)+'</li>'
 						else:
 							view +='<td width="33%">'
 						view +='</td>'

@@ -1,5 +1,5 @@
 <odoo>
-    <record id="product_stock_location_from" model="ir.ui.view">
+    <record id="product_stock_location_form" model="ir.ui.view">
 		<field name="name">Stock Location From View</field>
 		<field name="model">n.warehouse.placed.product</field>
 		<field name="type">form</field>
@@ -52,17 +52,23 @@
 					
 					<label for="max_qty"/>
 					<div>
-						<field name="max_qty" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/> Pallets 
+						<field name="max_qty" nolabel="1" options="{'no_open':True,'no_create':True}" class="oe_inline"/>
+						<field name="qty_unit" nolabel="1" readonly="1" class="oe_inline"/> 
 				       		<button type="object" help="Change Storage Capicity" name="change_storage_capicity" class="oe_inline"  nolabel="1"  icon="gtk-go-forward"/>
 					</div>
-					
+					<label for="pkg_capicity"/>
+					<div>
+						<field name="pkg_capicity" nolabel="1" readonly="1" class="oe_inline"/>
+				       		<field name="pkg_capicity_unit" nolabel="1" readonly="1" class="oe_inline"/>
+					</div>
+					<field name="product_type" invisible="1"/>
 				</group>
-		    		<group col="4" readonly="1">
+		    		<group name="single_product" col="4" readonly="1" attrs="{'invisible':[('product_type','!=','single')]}">
 					<field name="product_id"  options="{'no_open':True,'no_create':True}" />
 					<label for="total_quantity"/>
 					<div>
 						<field name="total_quantity" class="oe_inline"/>
-						<field name="qty_unit" class="oe_inline"/>
+						<field name="total_qty_unit" class="oe_inline"/>
 					</div>
 					<field name="Packaging_type" />
 					<label for="packages"/>
@@ -70,6 +76,18 @@
 						<field name="packages" class="oe_inline"/>
 						<field name="pkg_unit" class="oe_inline"/>
 					</div>
+				</group>
+				<group name="multi_product" attrs="{'invisible':[('product_type','!=','multi')]}" readonly="1">
+					<field name="multi_product_ids" nolable="1">
+						<tree>
+							<field name="product_id"/>
+							<field name="total_quantity" class="oe_inline"/>
+							<field name="total_qty_unit" class="oe_inline"/>
+							<field name="Packaging_type" />
+							<field name="packages" class="oe_inline"/>
+							<field name="pkg_unit" class="oe_inline"/>
+						</tree>
+					</field>
 				</group>
 				<notebook>
 					<!--page string="Lot Numbers">

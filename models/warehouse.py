@@ -28,16 +28,23 @@ class StockWarehouseMain(models.Model):
 	warehouse = fields.Many2one('stock.warehouse','Warehouse')
 	location = fields.Many2one('stock.location','Location')
 	location_view = fields.Many2one('stock.location.view','Location',ondelete='cascade')
-	row = fields.Char('Row')
-	column =fields.Char('Column')
-	depth =fields.Char('Depth')
-	product_id = fields.Many2one('product.product', string="Product")
+	row = fields.Char('Row Name')
+	column =fields.Char('Column Name')
+	depth =fields.Char('Depth Name')
+	max_qty = fields.Float('Storage Capacity',default=0.0,help='The actual Storage Capacity')
+	qty_unit = fields.Many2one("product.uom",'Unit')
+	 
 	state= fields.Selection([('empty','Empty'),('partial','Partial'),('full','FULL'),('maintenance','In Maintenance')],default='empty')
+	
+	product_type = fields.Selection([('single','Single Product'),('multi','Multi Product')],'Product Type')
+	multi_product_ids =fields.One2many('store.multi.product.data','store_id','Product Details')
+	product_id = fields.Many2one('product.product', string="Product")
+	
 	label_status = fields.Selection([('done','Done'),('warehouse','Warehouse'),
 					 ('location','Location'),('row','Row'),
 					 ('column','Column'),('depth','Depth'),('less_qty','Less Qty')],default='done')
-	max_qty = fields.Float('Storage Capacity',default=0.0)
-	pkg_capicity = fields.Float('Packages Capacity',default=0.0,help="maximum capacity of storage in packets, Caucluation based on product packaging")
+	
+	pkg_capicity = fields.Float('Packages Capacity',default=0.0,help="maximum capacity of storage in packets, Caucluation based on product packaging and storage capicity")
 	pkg_capicity_unit = fields.Many2one("product.uom",'Unit')
 	free_qty = fields.Float('Free Quantity',compute="_get_free_qty")
 	
@@ -46,7 +53,7 @@ class StockWarehouseMain(models.Model):
 	pkg_unit = fields.Many2one("product.uom",'Unit')
 	
 	total_quantity = fields.Float('Total Store Quantity',default=0.0, help="total quantity in product units")
-	qty_unit = fields.Many2one("product.uom",'Unit')
+	total_qty_unit = fields.Many2one("product.uom",'Unit')
 	
 	@api.multi
 	def name_get(self):
@@ -170,4 +177,21 @@ class locationHistory(models.Model):
     	do_number = fields.Many2one("stock.picking","DO Number")
     	qc_number = fields.Many2one("stock.picking","QC Number")
     	
+class storeMultiProduct(models.Model):
+	_name="store.multi.product.data"
+	
+	store_id =fields.Many2one('n.warehouse.placed.product','Store Name')
+	product_id = fields.Many2one('product.product', string="Product")
+	Packaging_type = fields.Many2one('product.packaging' ,string="Packaging",copy=True)
+	
+	pkg_capicity = fields.Float('Packages Capacity',default=0.0,help="maximum capacity of storage in packets, Caucluation based on product packaging")
+	pkg_capicity_unit = fields.Many2one("product.uom",'Unit')
+	
+	free_qty = fields.Float('Free Quantity',compute="_get_free_qty")
+	
+	packages = fields.Float('No of Packages',default=0.0,help="Total No. of packets currently in Storage,Packages Calculate on the Basic of packaging")
+	pkg_unit = fields.Many2one("product.uom",'Unit')
+	
+	total_quantity = fields.Float('Total Store Quantity',default=0.0, help="total quantity in product units")
+	total_qty_unit = fields.Many2one("product.uom",'Unit')
 
